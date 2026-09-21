@@ -19,6 +19,7 @@
     .card{background:#fff;border:1px solid rgba(20,80,51,.11);border-radius:22px;box-shadow:var(--shadow);padding:26px}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 16px}
     .field{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .field-wide{grid-column:1/-1}
     .field label{font-size:.9rem;font-weight:760}
     .field small{color:var(--muted);font-size:.78rem;line-height:1.4}
     .calculated{color:var(--green-dark)!important;font-weight:750;min-height:1.1em}
@@ -98,7 +99,7 @@
     <section class="card" aria-label="Stock out form">
       <form id="stockForm">
         <div class="form-grid">
-          <div class="field">
+          <div class="field field-wide">
             <label for="itemSelect">Items</label>
             <div class="item-controls">
               <select class="control" id="itemSelect">
@@ -121,11 +122,12 @@
             <label for="kg">KG</label>
             <input class="control" id="kg" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="e.g. 10 KG" required>
           </div>
-            <div class="field">
+          <div class="field">
             <label for="quantity">Quantity</label>
             <input class="control" id="quantity" type="text" inputmode="decimal" placeholder="e.g. 480 or 120 x 4" autocomplete="off" required>
             <small class="calculated" id="quantityResult" aria-live="polite"></small>
           </div>
+          <div class="field">
             <label for="price">Price (RM)</label>
             <input class="control" id="price" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="e.g. 25.50">
           </div>
@@ -133,7 +135,7 @@
             <label for="container">No. Container</label>
             <input class="control" id="container" type="text" placeholder="e.g. ABCD1234567" autocomplete="off">
           </div>
-          <div class="field" style="grid-column:1/-1">
+          <div class="field field-wide">
             <label for="remarks">Remarks</label>
             <input class="control" id="remarks" type="text" placeholder="e.g. Sales / Damage / Transfer" autocomplete="off">
           </div>
