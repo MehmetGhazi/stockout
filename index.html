@@ -206,8 +206,10 @@
     const upperClean = (value) => clean(value).toUpperCase();
     const STORAGE_KEY = "stockOutScPdmV2";
     const META_KEY = "stockOutScPdmMetaV1";
+    const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzeob4c3KFCeYQY6fSN0HXD8WXPP2dUTtOJyrXgsnduDjdr1H9ZhXD_VlbnqBChjySgkw/exec";
     let rows = [];
     let pickup = {lorryNumber:"",driverName:""};
+    let whatsappShareBusy = false;
     try { rows = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); if (!Array.isArray(rows)) rows = []; } catch { rows = []; }
     try {
       const meta=JSON.parse(localStorage.getItem(META_KEY) || "{}");
@@ -303,6 +305,39 @@
       pickup={lorryNumber:upperClean($("lorryNumber").value),driverName:upperClean($("driverName").value)};
       saveMeta(); closePickup(); toast("Pickup detail saved.");
     });
+    function createRecordId(){
+      const now=new Date();
+      const pad=(value)=>String(value).padStart(2,"0");
+      const datePart=now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate());
+      const timePart=pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
+      const randomPart=Math.random().toString(36).slice(2,6).toUpperCase();
+      return "SO-"+datePart+"-"+timePart+"-"+randomPart;
+    }
+    function saveHistoryToGoogleSheet(){
+      const payload={
+        recordId:createRecordId(),
+        branch:$("branch").value,
+        lorryNumber:pickup.lorryNumber,
+        driverName:pickup.driverName,
+        action:"SHARE_CLICKED",
+        items:rows.map(row=>({
+          item:row.item,
+          kg:row.kg,
+          quantity:row.quantity,
+          price:row.price,
+          container:row.container,
+          remarks:row.remarks
+        }))
+      };
+      return fetch(GOOGLE_SHEET_WEB_APP_URL,{
+        method:"POST",
+        mode:"no-cors",
+        cache:"no-store",
+        keepalive:true,
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(payload)
+      });
+    }
     function stockOutText(){
       const lines=["*STOCK OUT - "+$("branch").value+"*","*Date: "+today+"*",""];
       if(pickup.lorryNumber || pickup.driverName){
@@ -432,6 +467,17 @@
     });
     $("whatsappBtn").addEventListener("click",()=>{
       if(!rows.length){ toast("Add at least one item first."); return; }
+      if(whatsappShareBusy) return;
+      whatsappShareBusy=true;
+      const whatsappButton=$("whatsappBtn");
+      whatsappButton.disabled=true;
+      saveHistoryToGoogleSheet()
+        .then(()=>toast("History submitted to Google Sheet."))
+        .catch(()=>toast("WhatsApp opened, but history could not be saved."))
+        .finally(()=>setTimeout(()=>{
+          whatsappShareBusy=false;
+          whatsappButton.disabled=false;
+        },1500));
       const text=encodeURIComponent(stockOutText());
       const agent=navigator.userAgent || "";
       if(/Android/i.test(agent)){
