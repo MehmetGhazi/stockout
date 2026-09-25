@@ -57,7 +57,9 @@
     .modal-head h2{font-size:1.25rem}
     .modal-close{width:38px;height:38px;border:0;border-radius:10px;background:#edf2ef;color:#34423a;font-size:1.35rem;cursor:pointer}
     .modal-fields{display:grid;gap:15px}
-    .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+    .modal-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px}
+    .btn-clear-detail{background:#fff0ee;color:var(--danger);margin-right:auto}
+    .uppercase-input{text-transform:uppercase}
     .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#1f2c25;color:white;padding:11px 16px;border-radius:11px;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 10px 30px rgba(0,0,0,.18);z-index:10}
     .toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:680px){
@@ -119,9 +121,10 @@
                 <option>CILI KERING INDIA (668)</option>
                 <option>CILI KERING INDIA (SCM)</option>
                 <option>CILI KERING CHINA</option>
+		<option>CILI KERING CHINA (YIDU)</option>
                 <option>KACANG TANAH</option>
               </select>
-              <input class="control" id="manualItem" type="text" placeholder="Or type item manually" autocomplete="off">
+              <input class="control uppercase-input" id="manualItem" type="text" placeholder="Or type item manually" autocomplete="off">
             </div>
             <small>Select from the list, or type a new item manually.</small>
           </div>
@@ -140,11 +143,11 @@
           </div>
           <div class="field">
             <label for="container">No. Container</label>
-            <input class="control" id="container" type="text" placeholder="e.g. ABCD1234567" autocomplete="off">
+            <input class="control uppercase-input" id="container" type="text" placeholder="e.g. ABCD1234567" autocomplete="off">
           </div>
           <div class="field field-wide">
             <label for="remarks">Remarks</label>
-            <input class="control" id="remarks" type="text" placeholder="e.g. Sales / Damage / Transfer" autocomplete="off">
+            <input class="control uppercase-input" id="remarks" type="text" placeholder="e.g. Sales / Damage / Transfer" autocomplete="off">
           </div>
         </div>
         <div class="actions">
@@ -182,14 +185,15 @@
       <div class="modal-fields">
         <div class="field">
           <label for="lorryNumber">Lorry Number</label>
-          <input class="control" id="lorryNumber" type="text" placeholder="e.g. VAB 1234" autocomplete="off">
+          <input class="control uppercase-input" id="lorryNumber" type="text" placeholder="e.g. VAB 1234" autocomplete="off">
         </div>
         <div class="field">
           <label for="driverName">Driver Name</label>
-          <input class="control" id="driverName" type="text" placeholder="e.g. Ahmad" autocomplete="off">
+          <input class="control uppercase-input" id="driverName" type="text" placeholder="e.g. Ahmad" autocomplete="off">
         </div>
       </div>
       <div class="modal-actions">
+        <button class="btn btn-clear-detail" id="clearPickup" type="button">Clear Detail</button>
         <button class="btn btn-quiet" id="cancelPickup" type="button">Cancel</button>
         <button class="btn btn-primary" id="savePickup" type="button">Save Detail</button>
       </div>
@@ -199,6 +203,7 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const clean = (value) => String(value ?? "").trim();
+    const upperClean = (value) => clean(value).toUpperCase();
     const STORAGE_KEY = "stockOutScPdmV2";
     const META_KEY = "stockOutScPdmMetaV1";
     let rows = [];
@@ -242,6 +247,11 @@
       $("totalLines").textContent = rows.length + (rows.length === 1 ? " item" : " items");
       $("totalQty").textContent = numberText(rows.reduce((sum,row)=>sum+Number(row.quantity||0),0));
     }
+    ["manualItem","container","remarks","lorryNumber","driverName"].forEach((id)=>{
+      $(id).addEventListener("input",(event)=>{
+        event.target.value=event.target.value.toUpperCase();
+      });
+    });
     $("itemSelect").addEventListener("change",()=>{ if($("itemSelect").value) $("manualItem").value=""; });
     $("manualItem").addEventListener("input",()=>{ if(clean($("manualItem").value)) $("itemSelect").value=""; });
     $("branch").addEventListener("change",saveMeta);
@@ -258,7 +268,7 @@
       if(!(kg>0)){ toast("Please enter KG."); $("kg").focus(); return; }
       if(!(quantity>0)){ toast("Enter quantity as 480 or 120 x 4."); $("quantity").focus(); return; }
       if(priceInput && !(price>0)){ toast("Please enter a valid price."); $("price").focus(); return; }
-      rows.push({item,kg,quantity,price,remarks:clean($("remarks").value),container:clean($("container").value)});
+      rows.push({item:upperClean(item),kg,quantity,price,remarks:upperClean($("remarks").value),container:upperClean($("container").value)});
       save(); event.target.reset(); $("quantityResult").textContent=""; $("itemSelect").focus(); toast("Stock out added.");
     });
     $("summaryBody").addEventListener("click",(event)=>{
@@ -279,10 +289,18 @@
     $("pickupBtn").addEventListener("click",openPickup);
     $("closePickup").addEventListener("click",closePickup);
     $("cancelPickup").addEventListener("click",closePickup);
+    $("clearPickup").addEventListener("click",()=>{
+      $("lorryNumber").value="";
+      $("driverName").value="";
+      pickup={lorryNumber:"",driverName:""};
+      saveMeta();
+      closePickup();
+      toast("Pickup detail cleared.");
+    });
     $("pickupModal").addEventListener("click",(event)=>{ if(event.target===$("pickupModal")) closePickup(); });
     document.addEventListener("keydown",(event)=>{ if(event.key==="Escape" && !$("pickupModal").hidden) closePickup(); });
     $("savePickup").addEventListener("click",()=>{
-      pickup={lorryNumber:clean($("lorryNumber").value),driverName:clean($("driverName").value)};
+      pickup={lorryNumber:upperClean($("lorryNumber").value),driverName:upperClean($("driverName").value)};
       saveMeta(); closePickup(); toast("Pickup detail saved.");
     });
     function stockOutText(){
