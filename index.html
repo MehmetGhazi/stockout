@@ -222,6 +222,12 @@
     const escapeHtml = (value) => clean(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
     const numberText = (value) => Number(value).toLocaleString("en-MY",{maximumFractionDigits:2});
     const moneyText = (value) => Number(value).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const isBundleItem = (row) => Number(row.kg)>0 && Number(row.kg)<=1;
+    const bundleWeightText = (row) => numberText(Number(row.kg)*1000)+"G";
+    const stockItemDescription = (row) => isBundleItem(row)
+      ? row.item+" (1 × 20) "+bundleWeightText(row)
+      : row.item+" "+numberText(row.kg)+" KG";
+    const stockQuantityText = (row) => numberText(row.quantity)+(isBundleItem(row) ? " BDL" : "");
     function saveMeta(){
       localStorage.setItem(META_KEY,JSON.stringify({branch:$("branch").value,...pickup}));
       $("pickupBtn").textContent = pickup.lorryNumber || pickup.driverName ? "Pickup Detail ✓" : "Pickup Detail";
@@ -240,7 +246,7 @@
       $("summaryBody").innerHTML = rows.map((row,index) => `
         <tr>
           <td><div class="item-name">${escapeHtml(row.item)}</div><span class="kg-pill">${numberText(row.kg)} KG</span></td>
-          <td data-label="Quantity">${numberText(row.quantity)}</td>
+          <td data-label="Quantity">${stockQuantityText(row)}</td>
           <td data-label="Price">${row.price ? "RM "+moneyText(row.price) : "—"}</td>
           <td data-label="Remarks">${escapeHtml(row.remarks) || "—"}</td>
           <td data-label="Container">${escapeHtml(row.container) || "—"}</td>
@@ -347,7 +353,7 @@
         lines.push("");
       }
       rows.forEach(row=>{
-        lines.push("•"+row.item+" "+numberText(row.kg)+" KG - "+numberText(row.quantity));
+        lines.push("• "+stockItemDescription(row)+" - "+numberText(row.quantity));
         if(row.price) lines.push("RM "+moneyText(row.price));
         lines.push("");
       });
@@ -372,9 +378,9 @@
         const row=rows[index];
         return row ? `<tr>
           <td>${index+1}</td>
-          <td>${escapeHtml(row.item)}</td>
+          <td>${escapeHtml(stockItemDescription(row))}</td>
           <td>${numberText(row.kg)} KG</td>
-          <td>${numberText(row.quantity)}</td>
+          <td>${stockQuantityText(row)}</td>
           <td>${row.price ? moneyText(row.price) : ""}</td>
         </tr>` : `<tr><td>${index+1}</td><td></td><td></td><td></td><td></td></tr>`;
       }).join("");
