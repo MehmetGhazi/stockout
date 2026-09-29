@@ -227,6 +227,9 @@
     const stockItemDescription = (row) => isBundleItem(row)
       ? row.item+" (1 × 20) "+bundleWeightText(row)
       : row.item+" "+numberText(row.kg)+" KG";
+    const pdfItemDescription = (row) => isBundleItem(row)
+      ? row.item+" (1 × 20)"
+      : row.item;
     const stockQuantityText = (row) => numberText(row.quantity)+(isBundleItem(row) ? " BDL" : "");
     function saveMeta(){
       localStorage.setItem(META_KEY,JSON.stringify({branch:$("branch").value,...pickup}));
@@ -378,7 +381,7 @@
         const row=rows[index];
         return row ? `<tr>
           <td>${index+1}</td>
-          <td>${escapeHtml(stockItemDescription(row))}</td>
+          <td>${escapeHtml(pdfItemDescription(row))}</td>
           <td>${numberText(row.kg)} KG</td>
           <td>${stockQuantityText(row)}</td>
           <td>${row.price ? moneyText(row.price) : ""}</td>
